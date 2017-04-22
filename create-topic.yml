@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create a dynamo db event store table
+
+
+Parameters:
+  TopicName:
+    Type: String
+
+Resources:
+  PGPublishTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref TopicName
