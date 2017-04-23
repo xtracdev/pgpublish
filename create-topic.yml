@@ -12,3 +12,7 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Ref TopicName
+
+Outputs:
+  TopicArn:
+    Value: !Ref PGPublishTopic
