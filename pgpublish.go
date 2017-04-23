@@ -6,10 +6,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	log "github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
+	"errors"
+	"fmt"
+	"encoding/base64"
+	"strings"
+	"strconv"
 )
 
-const (
-	EnvPublishTopic = "PG_PUBLISH_TOPIC_ARN"
+var (
+	ErrDecodingEvent = errors.New("Error Decoding PG Event")
 )
 
 type Events2Pub struct {
@@ -94,3 +99,31 @@ func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 
 	return events2Publish, nil
 }
+
+func EncodePGEvent(aggId string, version int, payload []byte, typecode string) string {
+	return fmt.Sprintf("%s:%d:%s:%s",
+		aggId, version,
+		base64.StdEncoding.EncodeToString(payload),
+		typecode)
+}
+
+func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, typecode string, err error) {
+	parts := strings.Split(encoded, ":")
+	if len(parts) != 4 {
+		err = ErrDecodingEvent
+		return
+	}
+
+	aggId = parts[0]
+	version, err = strconv.Atoi(parts[1])
+	if err != nil {
+		return
+	}
+
+	payload, err = base64.StdEncoding.DecodeString(parts[2])
+
+	typecode = parts[3]
+
+	return
+}
+
