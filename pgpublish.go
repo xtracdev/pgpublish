@@ -127,3 +127,46 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 	return
 }
 
+func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
+	msg := EncodePGEvent(e2pub.aggregateId, e2pub.version, e2pub.payload, e2pub.version)
+
+	params := &sns.PublishInput{
+		Message:  aws.String(msg),
+		Subject:  aws.String("event for aggregate " + e2pub.aggregateId),
+		TopicArn: aws.String(e2p.topicARN),
+	}
+	resp, err := e2p.svc.Publish(params)
+
+	log.Println(resp)
+	return err
+}
+
+func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
+
+	log.Println("Start transaction")
+	tx, err := e2p.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = e2p.publishEvent(e2pub)
+	if err != nil {
+		return nil
+	}
+
+	log.Println("delete", e2pub.aggregateId, e2pub.version)
+	_, err = tx.Exec(`delete from publish where aggregate_id = $1 and version = $2`, e2pub.aggregateId, e2pub.version)
+	if err != nil {
+		return nil
+	}
+
+	log.Println("commit transaction")
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error committing transaction", err.Error())
+		return err
+	}
+
+	return nil
+}
