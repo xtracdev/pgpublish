@@ -1,15 +1,14 @@
 package db
 
-
 import (
 	. "github.com/gucumber/gucumber"
-	"github.com/xtracdev/pgeventstore"
+	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/xtracdev/pgconn"
+	"github.com/xtracdev/pgeventstore"
+	"github.com/xtracdev/pgpublish"
 	"log"
 	"os"
-	"github.com/xtracdev/goes/sample/testagg"
-	"github.com/stretchr/testify/assert"
-	"github.com/xtracdev/pgpublish"
 )
 
 func init() {
@@ -21,7 +20,7 @@ func init() {
 
 	Before("@snspub", func() {
 		var err error
-		eventConfig,err := pgconn.NewEnvConfig()
+		eventConfig, err := pgconn.NewEnvConfig()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -33,14 +32,13 @@ func init() {
 
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
-		eventStore,err = pgeventstore.NewPGEventStore(pgdb.DB)
+		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
 		topicArn := os.Getenv(pgpublish.TopicARN)
 		assert.NotEqual(T, "", topicArn)
-
 
 		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, topicArn)
 		if err != nil {
@@ -49,7 +47,7 @@ func init() {
 	})
 
 	Given(`^a persisted aggregate$`, func() {
-		aggregate, err := testagg.NewTestAgg("foo","bar","baz")
+		aggregate, err := testagg.NewTestAgg("foo", "bar", "baz")
 		if assert.Nil(T, err) {
 			publishedId = aggregate.AggregateID
 			err := aggregate.Store(eventStore)
@@ -71,7 +69,7 @@ func init() {
 
 	And(`^I can publish all events without error$`, func() {
 		err := publisher.PublishEvent(&(e2p[0]))
-		assert.Nil(T,err)
+		assert.Nil(T, err)
 	})
 
 }

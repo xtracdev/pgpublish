@@ -1,17 +1,17 @@
 package main
 
 import (
-	"github.com/xtracdev/pgconn"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/xtracdev/pgeventstore"
-	"os"
 	"github.com/xtracdev/goes"
 	"github.com/xtracdev/goes/sample/testagg"
-	"fmt"
+	"github.com/xtracdev/pgconn"
+	"github.com/xtracdev/pgeventstore"
+	"os"
 )
 
 func main() {
-	eventConfig,err := pgconn.NewEnvConfig()
+	eventConfig, err := pgconn.NewEnvConfig()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -23,12 +23,12 @@ func main() {
 
 	os.Setenv("ES_PUBLISH_EVENTS", "1")
 
-	eventStore,err := pgeventstore.NewPGEventStore(pgdb.DB)
+	eventStore, err := pgeventstore.NewPGEventStore(pgdb.DB)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	anID,_ := goes.GenerateID()
+	anID, _ := goes.GenerateID()
 	aggregate, err := testagg.NewTestAgg(
 		fmt.Sprintf("foo-%s", anID),
 		fmt.Sprintf("foo-%s", anID),

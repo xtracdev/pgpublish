@@ -3,12 +3,10 @@ package main
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/xtracdev/pgconn"
-	"os"
 	"github.com/xtracdev/pgpublish"
+	"os"
 	"time"
 )
-
-
 
 func delay() {
 	time.Sleep(5 * time.Second)
@@ -55,7 +53,7 @@ func publishEvents(publisher *pgpublish.Events2Pub) {
 	}
 
 	log.Infof("Processing %d events to publish", numberOfEvents)
-	for _,event := range events2pub {
+	for _, event := range events2pub {
 		err := publisher.PublishEvent(&event)
 		if err != nil {
 			log.Warn("Error publishing event: %s", err.Error())
@@ -64,7 +62,7 @@ func publishEvents(publisher *pgpublish.Events2Pub) {
 }
 
 func main() {
-	eventConfig,err := pgconn.NewEnvConfig()
+	eventConfig, err := pgconn.NewEnvConfig()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -78,7 +76,6 @@ func main() {
 	if topicARN == "" {
 		log.Fatalf("%s not specified in the environment", pgpublish.TopicARN)
 	}
-
 
 	publisher, err := pgpublish.NewEvents2Pub(pgdb.DB, topicARN)
 	if err != nil {

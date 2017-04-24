@@ -2,15 +2,15 @@ package pgpublish
 
 import (
 	"database/sql"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/aws/session"
-	log "github.com/Sirupsen/logrus"
-	"github.com/aws/aws-sdk-go/aws"
+	"encoding/base64"
 	"errors"
 	"fmt"
-	"encoding/base64"
-	"strings"
+	log "github.com/Sirupsen/logrus"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sns"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -22,10 +22,10 @@ var (
 )
 
 type Events2Pub struct {
-	db       *sql.DB
+	db           *sql.DB
 	tableLockTxn *sql.Tx
-	topicARN string
-	svc      *sns.SNS
+	topicARN     string
+	svc          *sns.SNS
 }
 
 type Event2Publish struct {
@@ -35,7 +35,7 @@ type Event2Publish struct {
 	Payload     []byte
 }
 
-func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub,error) {
+func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub, error) {
 	var svc *sns.SNS
 
 	if topicARN != "" {
@@ -46,9 +46,9 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub,error) {
 		}
 
 		svc = sns.New(session)
-		if err := CheckTopic(svc,topicARN); err != nil {
+		if err := CheckTopic(svc, topicARN); err != nil {
 			log.Warnf("NewEvents2Pub: error validating topic: %s", err.Error())
-			return nil,err
+			return nil, err
 		}
 	} else {
 		log.Warn("WARNING: No topic specified for NewEvents2Pub - this is only valid for certain test scenarios")
@@ -60,7 +60,6 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub,error) {
 		svc:      svc,
 	}, nil
 }
-
 
 func CheckTopic(svc *sns.SNS, arn string) error {
 
@@ -74,7 +73,7 @@ func CheckTopic(svc *sns.SNS, arn string) error {
 	return err
 }
 
-func (e2p *Events2Pub) GetTableLock() (bool,error) {
+func (e2p *Events2Pub) GetTableLock() (bool, error) {
 	log.Info("start txn for table lock")
 	txn, err := e2p.db.Begin()
 	if err != nil {
@@ -133,12 +132,12 @@ func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 	var payload []byte
 
 	for rows.Next() {
-		rows.Scan(&aggregateId,&version,&typecode,&payload)
+		rows.Scan(&aggregateId, &version, &typecode, &payload)
 		e2p := Event2Publish{
-			AggregateId:aggregateId,
-			Version:version,
-			Typecode:typecode,
-			Payload:payload,
+			AggregateId: aggregateId,
+			Version:     version,
+			Typecode:    typecode,
+			Payload:     payload,
 		}
 		events2Publish = append(events2Publish, e2p)
 	}

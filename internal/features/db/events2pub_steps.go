@@ -2,13 +2,13 @@ package db
 
 import (
 	. "github.com/gucumber/gucumber"
+	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/xtracdev/pgconn"
-	"log"
-	"os"
 	"github.com/xtracdev/pgeventstore"
 	"github.com/xtracdev/pgpublish"
-	"github.com/xtracdev/goes/sample/testagg"
-	"github.com/stretchr/testify/assert"
+	"log"
+	"os"
 )
 
 func init() {
@@ -21,7 +21,7 @@ func init() {
 
 	Before("@events2pub", func() {
 		var err error
-		eventConfig,err := pgconn.NewEnvConfig()
+		eventConfig, err := pgconn.NewEnvConfig()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -40,7 +40,7 @@ func init() {
 
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
-		eventStore,err = pgeventstore.NewPGEventStore(pgdb.DB)
+		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -54,7 +54,7 @@ func init() {
 
 	Given(`^events for aggregates in the publish table$`, func() {
 
-		aggregate, err := testagg.NewTestAgg("foo","bar","baz")
+		aggregate, err := testagg.NewTestAgg("foo", "bar", "baz")
 		publishedId = aggregate.AggregateID
 
 		err = aggregate.Store(eventStore)
@@ -78,8 +78,8 @@ func init() {
 		if assert.Nil(T, err) {
 			defer stmt.Close()
 
-				_, err = stmt.Exec(publishedId)
-				assert.Nil(T, err)
+			_, err = stmt.Exec(publishedId)
+			assert.Nil(T, err)
 		}
 	})
 }

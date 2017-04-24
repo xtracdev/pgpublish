@@ -1,12 +1,12 @@
 package sns
 
 import (
-	. "github.com/gucumber/gucumber"
-	"os"
-	"github.com/xtracdev/pgpublish"
-	"github.com/stretchr/testify/assert"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
+	. "github.com/gucumber/gucumber"
+	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/pgpublish"
+	"os"
 )
 
 func init() {
@@ -19,7 +19,7 @@ func init() {
 	})
 
 	When(`^check it$`, func() {
-		session,err := session.NewSession()
+		session, err := session.NewSession()
 		if assert.Nil(T, err) {
 			svc := sns.New(session)
 			checkTopicError = pgpublish.CheckTopic(svc, topicArn)
@@ -36,7 +36,7 @@ func init() {
 	})
 
 	When(`^I check it$`, func() {
-		session,err := session.NewSession()
+		session, err := session.NewSession()
 		if assert.Nil(T, err) {
 			svc := sns.New(session)
 			checkTopicError = pgpublish.CheckTopic(svc, topicArn)
@@ -46,6 +46,5 @@ func init() {
 	Then(`^I receive an error$`, func() {
 		assert.NotNil(T, checkTopicError)
 	})
-
 
 }
