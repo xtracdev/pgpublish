@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/xtracdev/pgconn"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"github.com/xtracdev/pgeventstore"
 	"os"
 	"github.com/xtracdev/goes"

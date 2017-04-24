@@ -128,7 +128,7 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 }
 
 func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
-	msg := EncodePGEvent(e2pub.aggregateId, e2pub.version, e2pub.payload, e2pub.version)
+	msg := EncodePGEvent(e2pub.aggregateId, e2pub.version, e2pub.payload, e2pub.typecode)
 
 	params := &sns.PublishInput{
 		Message:  aws.String(msg),
@@ -143,28 +143,31 @@ func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
 
 func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
 
-	log.Println("Start transaction")
+	log.Infof("Start transaction for %s %d", e2pub.aggregateId, e2pub.version)
 	tx, err := e2p.db.Begin()
 	if err != nil {
+		log.Warnf("Error starting txn: %s", err.Error())
 		return err
 	}
 	defer tx.Rollback()
 
 	err = e2p.publishEvent(e2pub)
 	if err != nil {
+		log.Warnf("Error publishing event: %s", err.Error())
 		return nil
 	}
 
 	log.Println("delete", e2pub.aggregateId, e2pub.version)
-	_, err = tx.Exec(`delete from publish where aggregate_id = $1 and version = $2`, e2pub.aggregateId, e2pub.version)
+	_, err = tx.Exec(`delete from es.t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.aggregateId, e2pub.version)
 	if err != nil {
+		log.Warnf("Error deleting event: %s", err.Error())
 		return nil
 	}
 
 	log.Println("commit transaction")
 	err = tx.Commit()
 	if err != nil {
-		log.Println("Error committing transaction", err.Error())
+		log.Warn("Error committing transaction", err.Error())
 		return err
 	}
 
