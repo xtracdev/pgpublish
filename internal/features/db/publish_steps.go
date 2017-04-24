@@ -1,25 +1,25 @@
 package db
 
+
 import (
 	. "github.com/gucumber/gucumber"
+	"github.com/xtracdev/pgeventstore"
 	"github.com/xtracdev/pgconn"
 	"log"
 	"os"
-	"github.com/xtracdev/pgeventstore"
-	"github.com/xtracdev/pgpublish"
 	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/pgpublish"
 )
 
 func init() {
-
 	var eventStore *pgeventstore.PGEventStore
+	var pgdb *pgconn.PostgresDB
 	var publisher *pgpublish.Events2Pub
 	var publishedId string
 	var e2p []pgpublish.Event2Publish
-	var pgdb *pgconn.PostgresDB
 
-	Before("@events2pub", func() {
+	Before("@snspub", func() {
 		var err error
 		eventConfig,err := pgconn.NewEnvConfig()
 		if err != nil {
@@ -31,13 +31,6 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-		stmt, err := pgdb.DB.Prepare("delete from es.t_aepb_publish")
-		if assert.Nil(T, err) {
-			defer stmt.Close()
-			_, err = stmt.Exec()
-			assert.Nil(T, err)
-		}
-
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
 		eventStore,err = pgeventstore.NewPGEventStore(pgdb.DB)
@@ -45,41 +38,40 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, "")
+		topicArn := os.Getenv(pgpublish.TopicARN)
+		assert.NotEqual(T, "", topicArn)
+
+
+		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, topicArn)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-
 	})
 
-	Given(`^events for aggregates in the publish table$`, func() {
-
+	Given(`^a persisted aggregate$`, func() {
 		aggregate, err := testagg.NewTestAgg("foo","bar","baz")
-		publishedId = aggregate.AggregateID
-
-		err = aggregate.Store(eventStore)
-		assert.Nil(T, err)
+		if assert.Nil(T, err) {
+			publishedId = aggregate.AggregateID
+			err := aggregate.Store(eventStore)
+			assert.Nil(T, err)
+		}
 	})
 
-	When(`^I query for the events$`, func() {
+	When(`^I query for events to publish$`, func() {
 		var err error
 		e2p, err = publisher.AggsWithEvents()
 		assert.Nil(T, err)
 	})
 
-	Then(`^Events2Pub returns the events$`, func() {
+	Then(`^I obtain all aggs with unpublished events$`, func() {
 		if assert.True(T, len(e2p) == 1) {
 			assert.Equal(T, publishedId, e2p[0].AggregateId)
 		}
 	})
 
-	After("@events2pub", func() {
-		stmt, err := pgdb.DB.Prepare("delete from es.t_aepb_publish where aggregate_id = $1")
-		if assert.Nil(T, err) {
-			defer stmt.Close()
-
-				_, err = stmt.Exec(publishedId)
-				assert.Nil(T, err)
-		}
+	And(`^I can publish all events without error$`, func() {
+		err := publisher.PublishEvent(&(e2p[0]))
+		assert.Nil(T,err)
 	})
+
 }

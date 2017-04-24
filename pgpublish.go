@@ -13,6 +13,10 @@ import (
 	"strconv"
 )
 
+const (
+	TopicARN = "TOPIC_ARN"
+)
+
 var (
 	ErrDecodingEvent = errors.New("Error Decoding PG Event")
 )

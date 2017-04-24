@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-const (
-	TopicARN = "TOPIC_ARN"
-)
+
 
 func delay() {
 	time.Sleep(5 * time.Second)
@@ -27,9 +25,9 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	topicARN := os.Getenv(TopicARN)
+	topicARN := os.Getenv(pgpublish.TopicARN)
 	if topicARN == "" {
-		log.Fatalf("%s not specified in the environment", TopicARN)
+		log.Fatalf("%s not specified in the environment", pgpublish.TopicARN)
 	}
 
 
