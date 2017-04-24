@@ -24,10 +24,10 @@ type Events2Pub struct {
 }
 
 type Event2Publish struct {
-	aggregateId string
-	version int
-	typecode string
-	payload []byte
+	AggregateId string
+	Version     int
+	Typecode    string
+	Payload     []byte
 }
 
 func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub,error) {
@@ -87,10 +87,10 @@ func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 	for rows.Next() {
 		rows.Scan(&aggregateId,&version,&typecode,&payload)
 		e2p := Event2Publish{
-			aggregateId:aggregateId,
-			version:version,
-			typecode:typecode,
-			payload:payload,
+			AggregateId:aggregateId,
+			Version:version,
+			Typecode:typecode,
+			Payload:payload,
 		}
 		events2Publish = append(events2Publish, e2p)
 	}
@@ -128,11 +128,11 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 }
 
 func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
-	msg := EncodePGEvent(e2pub.aggregateId, e2pub.version, e2pub.payload, e2pub.typecode)
+	msg := EncodePGEvent(e2pub.AggregateId, e2pub.Version, e2pub.Payload, e2pub.Typecode)
 
 	params := &sns.PublishInput{
 		Message:  aws.String(msg),
-		Subject:  aws.String("event for aggregate " + e2pub.aggregateId),
+		Subject:  aws.String("event for aggregate " + e2pub.AggregateId),
 		TopicArn: aws.String(e2p.topicARN),
 	}
 	resp, err := e2p.svc.Publish(params)
@@ -143,7 +143,7 @@ func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
 
 func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
 
-	log.Infof("Start transaction for %s %d", e2pub.aggregateId, e2pub.version)
+	log.Infof("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
 	tx, err := e2p.db.Begin()
 	if err != nil {
 		log.Warnf("Error starting txn: %s", err.Error())
@@ -157,8 +157,8 @@ func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
 		return nil
 	}
 
-	log.Println("delete", e2pub.aggregateId, e2pub.version)
-	_, err = tx.Exec(`delete from es.t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.aggregateId, e2pub.version)
+	log.Println("delete", e2pub.AggregateId, e2pub.Version)
+	_, err = tx.Exec(`delete from es.t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.AggregateId, e2pub.Version)
 	if err != nil {
 		log.Warnf("Error deleting event: %s", err.Error())
 		return nil
