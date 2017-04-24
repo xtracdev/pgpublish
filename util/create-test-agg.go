@@ -42,4 +42,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	pgdb.DB.Close()
 }

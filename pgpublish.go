@@ -23,6 +23,7 @@ var (
 
 type Events2Pub struct {
 	db       *sql.DB
+	tableLockTxn *sql.Tx
 	topicARN string
 	svc      *sns.SNS
 }
@@ -73,12 +74,55 @@ func CheckTopic(svc *sns.SNS, arn string) error {
 	return err
 }
 
+func (e2p *Events2Pub) GetTableLock() (bool,error) {
+	log.Info("start txn for table lock")
+	txn, err := e2p.db.Begin()
+	if err != nil {
+		return false, err
+	}
 
+	e2p.tableLockTxn = txn
+
+	log.Info("execute lock table command")
+	_, err = txn.Exec("lock table t_aepl_publock in exclusive mode nowait")
+
+	//No error? Lock was obtained
+	if err == nil {
+		return true, nil
+	}
+
+	//If an error was returned, we distinguish the case were could could not obtain
+	//the lock from any other error. Here we assume the lock was not obtained because
+	//someone else had the lock
+
+	//First, rollback the transaction or we'll leak resources, specifically the
+	//connection allocated with the transaction
+	txnErr := txn.Rollback()
+	if txnErr != nil {
+		log.Warnf("Error rolling back lock table txn: %s", txnErr)
+	}
+
+	if strings.Contains(err.Error(), "could not obtain lock on relation") {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+func (e2p *Events2Pub) ReleaseTableLock() error {
+	log.Info("release table lock")
+	if e2p.tableLockTxn == nil {
+		log.Warn("Warning - releasing lock from object with no txn")
+		return nil
+	}
+
+	return e2p.tableLockTxn.Rollback()
+}
 
 func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 	var events2Publish []Event2Publish
 
-	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 10`)
+	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 25`)
 	if err != nil {
 		log.Fatal(err)
 	}
