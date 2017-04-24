@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create a topic to use when publishing event store events
+
+
+Parameters:
+  TopicARN:
+    Type: String
+
+  QueueName:
+    Type: String
+
+Resources:
+
+  MyQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: !Ref QueueName
+
+  MySubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: !GetAtt [MyQueue, "Arn"]
+        Protocol: sqs
+        TopicArn: !Ref TopicARN

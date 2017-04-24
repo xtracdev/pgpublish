@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  Create a dynamo db event store table
+  Create a topic to use when publishing event store events
 
 
 Parameters:
