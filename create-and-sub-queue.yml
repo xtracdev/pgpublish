@@ -23,3 +23,20 @@ Resources:
         Endpoint: !GetAtt [MyQueue, "Arn"]
         Protocol: sqs
         TopicArn: !Ref TopicARN
+
+  MyQueuePolicy:
+    Type: "AWS::SQS::QueuePolicy"
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: !Join [ "/", [ !GetAtt [MyQueue, "Arn"], SQSDefaultPolicy ]]
+        Statement:
+          - Sid: "Sid123"
+            Effect: Allow
+            Principal: "*"
+            Action: "SQS:SendMessage"
+            Resource: !GetAtt [MyQueue, "Arn"]
+            Condition:
+              ArnEquals:
+                "aws:SourceArn" : !Ref TopicARN
+      Queues: [ !Ref MyQueue ]
