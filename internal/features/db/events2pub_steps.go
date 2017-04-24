@@ -31,7 +31,7 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-		stmt, err := pgdb.DB.Prepare("delete from es.t_aepb_publish")
+		stmt, err := pgdb.DB.Prepare("delete from t_aepb_publish")
 		if assert.Nil(T, err) {
 			defer stmt.Close()
 			_, err = stmt.Exec()
@@ -74,7 +74,7 @@ func init() {
 	})
 
 	After("@events2pub", func() {
-		stmt, err := pgdb.DB.Prepare("delete from es.t_aepb_publish where aggregate_id = $1")
+		stmt, err := pgdb.DB.Prepare("delete from t_aepb_publish where aggregate_id = $1")
 		if assert.Nil(T, err) {
 			defer stmt.Close()
 

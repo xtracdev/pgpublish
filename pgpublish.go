@@ -78,7 +78,7 @@ func CheckTopic(svc *sns.SNS, arn string) error {
 func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 	var events2Publish []Event2Publish
 
-	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from es.t_aepb_publish limit 10`)
+	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 10`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
 	}
 
 	log.Println("delete", e2pub.AggregateId, e2pub.Version)
-	_, err = tx.Exec(`delete from es.t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.AggregateId, e2pub.Version)
+	_, err = tx.Exec(`delete from t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.AggregateId, e2pub.Version)
 	if err != nil {
 		log.Warnf("Error deleting event: %s", err.Error())
 		return nil
