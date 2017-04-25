@@ -123,7 +123,8 @@ func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
 
 	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 25`)
 	if err != nil {
-		log.Fatal(err)
+		log.Warn(err.Error())
+		return nil,err
 	}
 
 	var aggregateId string
