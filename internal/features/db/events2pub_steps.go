@@ -14,7 +14,7 @@ import (
 func init() {
 
 	var eventStore *pgeventstore.PGEventStore
-	var publisher *pgpublish.Events2Pub
+	var publisher *pgpublish.EventStorePublisher
 	var publishedId string
 	var e2p []pgpublish.Event2Publish
 	var pgdb *pgconn.PostgresDB

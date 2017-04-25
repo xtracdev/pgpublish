@@ -21,7 +21,7 @@ var (
 	ErrDecodingEvent = errors.New("Error Decoding PG Event")
 )
 
-type Events2Pub struct {
+type EventStorePublisher struct {
 	db           *sql.DB
 	tableLockTxn *sql.Tx
 	topicARN     string
@@ -35,7 +35,7 @@ type Event2Publish struct {
 	Payload     []byte
 }
 
-func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub, error) {
+func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 	var svc *sns.SNS
 
 	if topicARN != "" {
@@ -54,7 +54,7 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*Events2Pub, error) {
 		log.Warn("WARNING: No topic specified for NewEvents2Pub - this is only valid for certain test scenarios")
 	}
 
-	return &Events2Pub{
+	return &EventStorePublisher{
 		db:       db,
 		topicARN: topicARN,
 		svc:      svc,
@@ -73,7 +73,7 @@ func CheckTopic(svc *sns.SNS, arn string) error {
 	return err
 }
 
-func (e2p *Events2Pub) GetTableLock() (bool, error) {
+func (e2p *EventStorePublisher) GetTableLock() (bool, error) {
 	log.Info("start txn for table lock")
 	txn, err := e2p.db.Begin()
 	if err != nil {
@@ -108,7 +108,7 @@ func (e2p *Events2Pub) GetTableLock() (bool, error) {
 	}
 }
 
-func (e2p *Events2Pub) ReleaseTableLock() error {
+func (e2p *EventStorePublisher) ReleaseTableLock() error {
 	log.Info("release table lock")
 	if e2p.tableLockTxn == nil {
 		log.Warn("Warning - releasing lock from object with no txn")
@@ -118,7 +118,7 @@ func (e2p *Events2Pub) ReleaseTableLock() error {
 	return e2p.tableLockTxn.Rollback()
 }
 
-func (e2p *Events2Pub) AggsWithEvents() ([]Event2Publish, error) {
+func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	var events2Publish []Event2Publish
 
 	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 25`)
@@ -175,7 +175,7 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 	return
 }
 
-func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
+func (e2p *EventStorePublisher) publishEvent(e2pub *Event2Publish) error {
 	msg := EncodePGEvent(e2pub.AggregateId, e2pub.Version, e2pub.Payload, e2pub.Typecode)
 
 	params := &sns.PublishInput{
@@ -189,7 +189,7 @@ func (e2p *Events2Pub) publishEvent(e2pub *Event2Publish) error {
 	return err
 }
 
-func (e2p *Events2Pub) PublishEvent(e2pub *Event2Publish) error {
+func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 
 	log.Infof("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
 	tx, err := e2p.db.Begin()

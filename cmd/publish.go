@@ -16,7 +16,7 @@ func unlockDelay() {
 	time.Sleep(1 * time.Second)
 }
 
-func publishEvents(publisher *pgpublish.Events2Pub) {
+func publishEvents(publisher *pgpublish.EventStorePublisher) {
 	log.Info("lock table")
 	gotLock, err := publisher.GetTableLock()
 	if err != nil {
