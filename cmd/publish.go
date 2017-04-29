@@ -17,7 +17,7 @@ func unlockDelay() {
 }
 
 func publishEvents(publisher *pgpublish.EventStorePublisher) {
-	log.Info("lock table")
+	log.Debug("lock table")
 	gotLock, err := publisher.GetTableLock()
 	if err != nil {
 		log.Warnf("Error locking table: %s", err.Error())
@@ -26,7 +26,7 @@ func publishEvents(publisher *pgpublish.EventStorePublisher) {
 	}
 
 	if !gotLock {
-		log.Info("Did not obtain lock... try again in a bit")
+		log.Debug("Did not obtain lock... try again in a bit")
 		delay()
 		return
 	}
@@ -36,7 +36,7 @@ func publishEvents(publisher *pgpublish.EventStorePublisher) {
 		unlockDelay()
 	}()
 
-	log.Info("get events to publish")
+	log.Debug("get events to publish")
 	events2pub, err := publisher.AggsWithEvents()
 	if err != nil {
 		log.Warnf("Error retrieving events to publish: %s", err.Error())
@@ -44,15 +44,15 @@ func publishEvents(publisher *pgpublish.EventStorePublisher) {
 		return
 	}
 
-	log.Info("check events...")
+	log.Debug("check events...")
 	numberOfEvents := len(events2pub)
 	if numberOfEvents == 0 {
-		log.Info("No events to process")
+		log.Debug("No events to process")
 		delay()
 		return
 	}
 
-	log.Infof("Processing %d events to publish", numberOfEvents)
+	log.Debugf("Processing %d events to publish", numberOfEvents)
 	for _, event := range events2pub {
 		err := publisher.PublishEvent(&event)
 		if err != nil {

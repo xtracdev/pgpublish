@@ -16,7 +16,7 @@ import (
 
 const (
 	TopicARN = "TOPIC_ARN"
-	LogLevel = "PG_PUBLISH_LOGLEVEL"
+	LogLevel = "PG_PUBLISH_LOG_LEVEL"
 )
 
 var (
@@ -65,7 +65,7 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 
 func CheckTopic(svc *sns.SNS, arn string) error {
 
-	log.Println("check topic", arn)
+	log.Info("check topic", arn)
 
 	params := &sns.GetTopicAttributesInput{
 		TopicArn: aws.String(arn),
@@ -76,7 +76,7 @@ func CheckTopic(svc *sns.SNS, arn string) error {
 }
 
 func (e2p *EventStorePublisher) GetTableLock() (bool, error) {
-	log.Info("start txn for table lock")
+	log.Debug("start txn for table lock")
 	txn, err := e2p.db.Begin()
 	if err != nil {
 		return false, err
@@ -84,7 +84,7 @@ func (e2p *EventStorePublisher) GetTableLock() (bool, error) {
 
 	e2p.tableLockTxn = txn
 
-	log.Info("execute lock table command")
+	log.Debug("execute lock table command")
 	_, err = txn.Exec("lock table t_aepl_publock in exclusive mode nowait")
 
 	//No error? Lock was obtained
@@ -111,7 +111,7 @@ func (e2p *EventStorePublisher) GetTableLock() (bool, error) {
 }
 
 func (e2p *EventStorePublisher) ReleaseTableLock() error {
-	log.Info("release table lock")
+	log.Debug("release table lock")
 	if e2p.tableLockTxn == nil {
 		log.Warn("Warning - releasing lock from object with no txn")
 		return nil
@@ -187,13 +187,13 @@ func (e2p *EventStorePublisher) publishEvent(e2pub *Event2Publish) error {
 	}
 	resp, err := e2p.svc.Publish(params)
 
-	log.Println(resp)
+	log.Debug(resp)
 	return err
 }
 
 func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 
-	log.Infof("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
+	log.Debugf("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
 	tx, err := e2p.db.Begin()
 	if err != nil {
 		log.Warnf("Error starting txn: %s", err.Error())
@@ -207,14 +207,14 @@ func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 		return nil
 	}
 
-	log.Println("delete", e2pub.AggregateId, e2pub.Version)
+	log.Debug("delete", e2pub.AggregateId, e2pub.Version)
 	_, err = tx.Exec(`delete from t_aepb_publish where aggregate_id = $1 and version = $2`, e2pub.AggregateId, e2pub.Version)
 	if err != nil {
 		log.Warnf("Error deleting event: %s", err.Error())
 		return nil
 	}
 
-	log.Println("commit transaction")
+	log.Debug("commit transaction")
 	err = tx.Commit()
 	if err != nil {
 		log.Warn("Error committing transaction", err.Error())
