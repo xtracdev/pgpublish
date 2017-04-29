@@ -53,7 +53,7 @@ func init() {
 	go func() {
 		c := time.Tick(MetricsDumpInterval)
 		for range c {
-			print("SIGNAL...")
+			//Signal self to dump metrics to stdout
 			syscall.Kill(pid, metrics.DefaultSignal)
 		}
 	}()
