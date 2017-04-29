@@ -61,6 +61,9 @@ func publishEvents(publisher *pgpublish.EventStorePublisher) {
 	}
 }
 
+
+
+
 func main() {
 	eventConfig, err := pgconn.NewEnvConfig()
 	if err != nil {
@@ -75,6 +78,10 @@ func main() {
 	topicARN := os.Getenv(pgpublish.TopicARN)
 	if topicARN == "" {
 		log.Fatalf("%s not specified in the environment", pgpublish.TopicARN)
+	}
+
+	if err = pgpublish.SetLogLevel(); err != nil {
+		log.Warn(err.Error())
 	}
 
 	publisher, err := pgpublish.NewEvents2Pub(pgdb.DB, topicARN)

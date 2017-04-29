@@ -11,10 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/sns"
 	"strconv"
 	"strings"
+	"os"
 )
 
 const (
 	TopicARN = "TOPIC_ARN"
+	LogLevel = "PG_PUBLISH_LOGLEVEL"
 )
 
 var (
@@ -217,6 +219,31 @@ func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 	if err != nil {
 		log.Warn("Error committing transaction", err.Error())
 		return err
+	}
+
+	return nil
+}
+
+func SetLogLevel() error {
+	origLogLevel := os.Getenv(LogLevel)
+	if origLogLevel != "" {
+		ll := strings.ToLower(origLogLevel)
+		switch ll {
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "warn":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		default:
+			return errors.New(
+				fmt.Sprintf("Ignoring log level %s - only debug, info, warn, and error are supported", origLogLevel),
+			)
+		}
+	} else {
+		log.Println("Default log level used")
 	}
 
 	return nil
