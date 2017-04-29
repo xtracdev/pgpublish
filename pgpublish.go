@@ -6,21 +6,29 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/armon/go-metrics"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
+	"os"
 	"strconv"
 	"strings"
-	"os"
+	"syscall"
+	"time"
 )
 
 const (
-	TopicARN = "TOPIC_ARN"
-	LogLevel = "PG_PUBLISH_LOG_LEVEL"
+	TopicARN            = "TOPIC_ARN"
+	LogLevel            = "PG_PUBLISH_LOG_LEVEL"
+	MetricsDumpInterval = 1 * time.Minute
 )
 
 var (
 	ErrDecodingEvent = errors.New("Error Decoding PG Event")
+	metricsSink      = metrics.NewInmemSink(MetricsDumpInterval, 2*MetricsDumpInterval)
+	signal           = metrics.DefaultInmemSignal(metricsSink)
+	locksAcquired    = []string{"locks_acquired"}
+	eventsProcessed  = []string{"events_published"}
 )
 
 type EventStorePublisher struct {
@@ -35,6 +43,20 @@ type Event2Publish struct {
 	Version     int
 	Typecode    string
 	Payload     []byte
+}
+
+func init() {
+	metrics.NewGlobal(metrics.DefaultConfig("pgpublish"), metricsSink)
+	metricsSink.IncrCounter([]string{"errors"}, 0)
+	pid := syscall.Getpid()
+	log.Infof("Using %d for signal pid", pid)
+	go func() {
+		c := time.Tick(MetricsDumpInterval)
+		for range c {
+			print("SIGNAL...")
+			syscall.Kill(pid, metrics.DefaultSignal)
+		}
+	}()
 }
 
 func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
@@ -126,7 +148,7 @@ func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 25`)
 	if err != nil {
 		log.Warn(err.Error())
-		return nil,err
+		return nil, err
 	}
 
 	var aggregateId string
@@ -247,4 +269,60 @@ func SetLogLevel() error {
 	}
 
 	return nil
+}
+
+func delay() {
+	time.Sleep(5 * time.Second)
+}
+
+func unlockDelay() {
+	time.Sleep(1 * time.Second)
+}
+
+func PublishEvents(publisher *EventStorePublisher) {
+	log.Debug("lock table")
+	gotLock, err := publisher.GetTableLock()
+	if err != nil {
+		log.Warnf("Error locking table: %s", err.Error())
+		delay()
+		return
+	}
+
+	metricsSink.IncrCounter(locksAcquired, 1)
+
+	if !gotLock {
+		log.Debug("Did not obtain lock... try again in a bit")
+		delay()
+		return
+	}
+
+	defer func() {
+		publisher.ReleaseTableLock()
+		unlockDelay()
+	}()
+
+	log.Debug("get events to publish")
+	events2pub, err := publisher.AggsWithEvents()
+	if err != nil {
+		log.Warnf("Error retrieving events to publish: %s", err.Error())
+		delay()
+		return
+	}
+
+	log.Debug("check events...")
+	numberOfEvents := len(events2pub)
+	if numberOfEvents == 0 {
+		log.Debug("No events to process")
+		delay()
+		return
+	}
+
+	log.Debugf("Processing %d events to publish", numberOfEvents)
+	for _, event := range events2pub {
+		err := publisher.PublishEvent(&event)
+		if err != nil {
+			log.Warn("Error publishing event: %s", err.Error())
+		}
+		metricsSink.IncrCounter(eventsProcessed, 1)
+	}
 }

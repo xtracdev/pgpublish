@@ -1,19 +1,19 @@
 package pgpublish
 
 import (
-	"testing"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
-	"fmt"
+	"testing"
 )
 
 func TestSetLogLevel(t *testing.T) {
 	testCases := []struct {
 		logLevel string
-		err error
+		err      error
 	}{
-		{"debug",nil},
+		{"debug", nil},
 		{"dEbUG", nil},
 		{"Info", nil},
 		{"WARN", nil},
@@ -22,7 +22,7 @@ func TestSetLogLevel(t *testing.T) {
 		{"NoGo", errors.New("NoGo")},
 	}
 
-	for _,tc := range testCases {
+	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("log level %s", tc.logLevel), func(t *testing.T) {
 			os.Setenv(LogLevel, tc.logLevel)
 			err := SetLogLevel()

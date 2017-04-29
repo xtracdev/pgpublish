@@ -14,6 +14,7 @@ go get github.com/gucumber/gucumber
 go get github.com/stretchr/testify/assert
 go get github.com/lib/pq
 go get github.com/aws/aws-sdk-go/...
+go get github.com/armon/go-metrics
 </pre>
 
 ## Contributing
