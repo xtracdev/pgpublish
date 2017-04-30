@@ -25,7 +25,7 @@ func TestSetLogLevel(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("log level %s", tc.logLevel), func(t *testing.T) {
 			os.Setenv(LogLevel, tc.logLevel)
-			err := SetLogLevel()
+			err := SetLogLevel(LogLevel)
 			switch tc.err {
 			case nil:
 				if err != nil {

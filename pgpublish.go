@@ -251,8 +251,10 @@ func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 	return nil
 }
 
-func SetLogLevel() error {
-	origLogLevel := os.Getenv(LogLevel)
+//SetLogLevel sets the log level reading the level to use from the envrionment using
+//the given environment variable name
+func SetLogLevel(logLevelEnvVarName string) error {
+	origLogLevel := os.Getenv(logLevelEnvVarName)
 	if origLogLevel != "" {
 		ll := strings.ToLower(origLogLevel)
 		switch ll {

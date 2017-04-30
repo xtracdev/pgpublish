@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("%s not specified in the environment", pgpublish.TopicARN)
 	}
 
-	if err = pgpublish.SetLogLevel(); err != nil {
+	if err = pgpublish.SetLogLevel(pgpublish.LogLevel); err != nil {
 		log.Warn(err.Error())
 	}
 
