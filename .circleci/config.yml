@@ -22,8 +22,8 @@ jobs:
           command: |
             go get github.com/gucumber/gucumber/cmd/gucumber
             go get github.com/stretchr/testify/assert
-            go get github.com/xtracdev/pgconn
-            go get github.com/xtracdev/pgeventstore
+            go get github.com/xtracdev/goes/sample/testagg
+            go get github.com/xtracdev/pgpublish
       - run:
           name: install-schema
           command: |
