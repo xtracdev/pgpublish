@@ -92,6 +92,11 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 
 func CheckTopic(svc *sns.SNS, arn string) error {
 
+	if arn == "" {
+		warnErrorf("%s","No topic set for publisher - only valid for test configuration. No event published")
+		return nil
+	}
+
 	log.Info("check topic", arn)
 
 	params := &sns.GetTopicAttributesInput{
@@ -219,6 +224,10 @@ func (e2p *EventStorePublisher) publishEvent(e2pub *Event2Publish) error {
 }
 
 func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
+	if e2p.topicARN =="" {
+		warnErrorf("%s","No topic set for publisher - only valid for test configuration. No event published")
+		return nil
+	}
 
 	log.Debugf("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
 	tx, err := e2p.db.Begin()

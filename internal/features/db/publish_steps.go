@@ -38,7 +38,6 @@ func init() {
 		}
 
 		topicArn := os.Getenv(pgpublish.TopicARN)
-		assert.NotEqual(T, "", topicArn)
 
 		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, topicArn)
 		if err != nil {
