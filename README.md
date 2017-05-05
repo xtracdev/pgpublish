@@ -2,6 +2,7 @@
 
 Publish events from Postgres to an SNS topic
 
+[![CircleCI](https://circleci.com/gh/xtracdev/pgpublish.svg?style=svg)](https://circleci.com/gh/xtracdev/pgpublish)
 
 ## Dependencies
 
