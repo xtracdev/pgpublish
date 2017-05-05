@@ -24,6 +24,7 @@ jobs:
             go get github.com/stretchr/testify/assert
             go get github.com/xtracdev/goes/sample/testagg
             go get github.com/xtracdev/pgconn
+            go get github.com/xtracdev/pgeventstore
       - run:
           name: install-schema
           command: |
