@@ -1,0 +1,42 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/xtracdev/pgeventstore
+    docker:
+      - image: golang:1.8.1-onbuild
+      - image: postgres:9.6.2
+        environment:
+          POSTGRES_PASSWORD: password
+      - image: xtracdev/pgflywayseed
+        environment:
+          DB_USER: postgres
+          DB_PASSWORD: password
+          DB_URL: jdbc:postgresql://localhost:5432/postgres
+
+    steps:
+      - checkout
+      - run: go get -v -t
+      - run: go test
+      - run:
+          name: integration-test-deps
+          command: |
+            go get github.com/gucumber/gucumber/cmd/gucumber
+            go get github.com/stretchr/testify/assert
+            go get github.com/xtracdev/pgconn
+            go get github.com/xtracdev/pgeventstore
+      - run:
+          name: install-schema
+          command: |
+            sleep 10
+            echo "delay finished"
+      - run:
+          name: integration-tests
+          environment:
+            DB_USER: postgres
+            DB_PASSWORD: password
+            DB_HOST: localhost
+            DB_PORT: 5432
+            DB_NAME: postgres
+          command: |
+            echo "fire up gucumber"
+            gucumber
