@@ -23,7 +23,6 @@ jobs:
             go get github.com/gucumber/gucumber/cmd/gucumber
             go get github.com/stretchr/testify/assert
             go get github.com/xtracdev/goes/sample/testagg
-            go get github.com/xtracdev/pgpublish
             go get github.com/xtracdev/pgconn
       - run:
           name: install-schema
@@ -40,4 +39,4 @@ jobs:
             DB_NAME: postgres
           command: |
             echo "fire up gucumber"
-            gucumber
+            gucumber -tags=@events2pub
