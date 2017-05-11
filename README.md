@@ -4,6 +4,10 @@ Publish events from Postgres to an SNS topic
 
 [![CircleCI](https://circleci.com/gh/xtracdev/pgpublish.svg?style=svg)](https://circleci.com/gh/xtracdev/pgpublish)
 
+This project complements the [pgeventstore](https://github.com/xtracdev/pgeventstore) 
+project to take events from the publish table and send them to an AWS SNS
+topic. Once published to SNS, events are removed from the publish table.
+
 ## Dependencies
 
 <pre>
