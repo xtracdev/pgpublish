@@ -44,6 +44,7 @@ type Event2Publish struct {
 	Version     int
 	Typecode    string
 	Payload     []byte
+	Timestamp   time.Time
 }
 
 func init() {
@@ -155,7 +156,7 @@ func (e2p *EventStorePublisher) ReleaseTableLock() error {
 func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	var events2Publish []Event2Publish
 
-	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload from t_aepb_publish limit 25`)
+	rows, err := e2p.db.Query(`select aggregate_id, version, typecode, payload, event_time from t_aepb_publish limit 25`)
 	if err != nil {
 		warnErrorf(err.Error())
 		return nil, err
@@ -165,14 +166,16 @@ func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	var version int
 	var typecode string
 	var payload []byte
+	var timestamp time.Time
 
 	for rows.Next() {
-		rows.Scan(&aggregateId, &version, &typecode, &payload)
+		rows.Scan(&aggregateId, &version, &typecode, &payload,&timestamp)
 		e2p := Event2Publish{
 			AggregateId: aggregateId,
 			Version:     version,
 			Typecode:    typecode,
 			Payload:     payload,
+			Timestamp:   timestamp,
 		}
 		events2Publish = append(events2Publish, e2p)
 	}
@@ -182,16 +185,18 @@ func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	return events2Publish, nil
 }
 
-func EncodePGEvent(aggId string, version int, payload []byte, typecode string) string {
-	return fmt.Sprintf("%s:%d:%s:%s",
+func EncodePGEvent(aggId string, version int, payload []byte, typecode string,timestamp time.Time) string {
+	return fmt.Sprintf("%s:%d:%s:%s:%d",
 		aggId, version,
 		base64.StdEncoding.EncodeToString(payload),
-		typecode)
+		typecode,
+		timestamp.UnixNano(),
+	)
 }
 
-func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, typecode string, err error) {
+func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, typecode string, timestamp time.Time, err error) {
 	parts := strings.Split(encoded, ":")
-	if len(parts) != 4 {
+	if len(parts) != 5 {
 		err = ErrDecodingEvent
 		return
 	}
@@ -206,11 +211,18 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 
 	typecode = parts[3]
 
+	unixTS, err := strconv.ParseInt(parts[4], 10, 64)
+	if err != nil {
+		return
+	}
+
+	timestamp = time.Unix(0,unixTS)
+
 	return
 }
 
 func (e2p *EventStorePublisher) publishEvent(e2pub *Event2Publish) error {
-	msg := EncodePGEvent(e2pub.AggregateId, e2pub.Version, e2pub.Payload, e2pub.Typecode)
+	msg := EncodePGEvent(e2pub.AggregateId, e2pub.Version, e2pub.Payload, e2pub.Typecode, e2pub.Timestamp)
 
 	params := &sns.PublishInput{
 		Message:  aws.String(msg),
