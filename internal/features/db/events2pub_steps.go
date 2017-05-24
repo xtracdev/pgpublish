@@ -32,11 +32,17 @@ func init() {
 		}
 
 		stmt, err := pgdb.DB.Prepare("delete from t_aepb_publish")
-		if assert.Nil(T, err) {
-			defer stmt.Close()
-			_, err = stmt.Exec()
-			assert.Nil(T, err)
+		if err != nil {
+			log.Fatal(err.Error())
 		}
+
+
+		defer stmt.Close()
+		_, err = stmt.Exec()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		
 
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
