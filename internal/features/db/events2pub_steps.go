@@ -42,7 +42,7 @@ func init() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		
+
 
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
