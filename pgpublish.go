@@ -47,7 +47,7 @@ type Event2Publish struct {
 	Timestamp   time.Time
 }
 
-func init() {
+func (e2p *EventStorePublisher) InitMetricsSink() {
 	metrics.NewGlobal(metrics.DefaultConfig("pgpublish"), metricsSink)
 	pid := syscall.Getpid()
 	log.Infof("Using %d for signal pid", pid)

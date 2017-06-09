@@ -38,6 +38,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	aggregate.UpdateFoo(fmt.Sprintf("new=foo-%s", anID))
+
 	err = aggregate.Store(eventStore)
 	if err != nil {
 		log.Fatal(err)

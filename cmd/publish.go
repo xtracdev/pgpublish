@@ -32,6 +32,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	publisher.InitMetricsSink()
 	for {
 		pgpublish.PublishEvents(publisher)
 	}
