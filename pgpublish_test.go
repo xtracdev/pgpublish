@@ -58,3 +58,16 @@ func TestDecodeEncoded(t *testing.T) {
 
 	}
 }
+
+func TestPublishStateFromEnv(t *testing.T) {
+	publisher, err := NewEvents2Pub(nil, "")
+	if assert.Nil(t, err) {
+		assert.False(t, publisher.publishingEnabled)
+	}
+
+	os.Setenv(PublishEnabled, "1")
+	publisher, err = NewEvents2Pub(nil, "")
+	if assert.Nil(t, err) {
+		assert.True(t, publisher.publishingEnabled)
+	}
+}
