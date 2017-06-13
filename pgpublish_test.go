@@ -3,11 +3,11 @@ package pgpublish
 import (
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSetLogLevel(t *testing.T) {
@@ -48,13 +48,13 @@ func TestDecodeEncoded(t *testing.T) {
 	now := time.Now()
 	encoded := EncodePGEvent("aggid", 123456, []byte("Now it the time"), "abcde", now)
 
-	a,v,p,t1,t2, err := DecodePGEvent(encoded)
+	a, v, p, t1, t2, err := DecodePGEvent(encoded)
 	if assert.Nil(t, err) {
 		assert.Equal(t, "aggid", a, "Different aggregate id than expected")
 		assert.Equal(t, 123456, v, "Different version id than expected")
 		assert.Equal(t, []byte("Now it the time"), p, "Different payload id than expected")
 		assert.Equal(t, "abcde", t1, "Different type code than expected")
-		assert.True(t,now.Equal(t2), "Different time than expected")
+		assert.True(t, now.Equal(t2), "Different time than expected")
 
 	}
 }
