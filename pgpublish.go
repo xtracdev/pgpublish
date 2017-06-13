@@ -94,7 +94,7 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 func CheckTopic(svc *sns.SNS, arn string) error {
 
 	if arn == "" {
-		warnErrorf("%s","No topic set for publisher - only valid for test configuration. No event published")
+		warnErrorf("%s", "No topic set for publisher - only valid for test configuration. No event published")
 		return nil
 	}
 
@@ -169,7 +169,7 @@ func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	var timestamp time.Time
 
 	for rows.Next() {
-		rows.Scan(&aggregateId, &version, &typecode, &payload,&timestamp)
+		rows.Scan(&aggregateId, &version, &typecode, &payload, &timestamp)
 		e2p := Event2Publish{
 			AggregateId: aggregateId,
 			Version:     version,
@@ -185,7 +185,7 @@ func (e2p *EventStorePublisher) AggsWithEvents() ([]Event2Publish, error) {
 	return events2Publish, nil
 }
 
-func EncodePGEvent(aggId string, version int, payload []byte, typecode string,timestamp time.Time) string {
+func EncodePGEvent(aggId string, version int, payload []byte, typecode string, timestamp time.Time) string {
 	return fmt.Sprintf("%s:%d:%s:%s:%d",
 		aggId, version,
 		base64.StdEncoding.EncodeToString(payload),
@@ -216,7 +216,7 @@ func DecodePGEvent(encoded string) (aggId string, version int, payload []byte, t
 		return
 	}
 
-	timestamp = time.Unix(0,unixTS)
+	timestamp = time.Unix(0, unixTS)
 
 	return
 }
@@ -230,18 +230,19 @@ func (e2p *EventStorePublisher) publishEvent(e2pub *Event2Publish) error {
 		TopicArn: aws.String(e2p.topicARN),
 	}
 	resp, err := e2p.svc.Publish(params)
-
-	log.Debug(resp)
+	if err != nil {
+		log.Infof("Published event for aggregate %s - SNS message id %s", e2pub.AggregateId, *resp.MessageId)
+	}
 	return err
 }
 
 func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
-	if e2p.topicARN =="" {
-		warnErrorf("%s","No topic set for publisher - only valid for test configuration. No event published")
+	if e2p.topicARN == "" {
+		warnErrorf("%s", "No topic set for publisher - only valid for test configuration. No event published")
 		return nil
 	}
 
-	log.Debugf("Start transaction for %s %d", e2pub.AggregateId, e2pub.Version)
+	log.Infof("Publish event for aggregate %s %d", e2pub.AggregateId, e2pub.Version)
 	tx, err := e2p.db.Begin()
 	if err != nil {
 		warnErrorf("Error starting txn: %s", err.Error())

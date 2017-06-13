@@ -36,13 +36,11 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-
 		defer stmt.Close()
 		_, err = stmt.Exec()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-
 
 		os.Setenv("ES_PUBLISH_EVENTS", "1")
 
