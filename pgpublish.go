@@ -21,6 +21,7 @@ const (
 	TopicARN            = "TOPIC_ARN"
 	LogLevel            = "PG_PUBLISH_LOG_LEVEL"
 	MetricsDumpInterval = 1 * time.Minute
+	PublishEnabled      = "PG_PUBLISH_ENABLED"
 )
 
 var (
@@ -33,10 +34,11 @@ var (
 )
 
 type EventStorePublisher struct {
-	db           *sql.DB
-	tableLockTxn *sql.Tx
-	topicARN     string
-	svc          *sns.SNS
+	db                *sql.DB
+	tableLockTxn      *sql.Tx
+	topicARN          string
+	svc               *sns.SNS
+	publishingEnabled bool
 }
 
 type Event2Publish struct {
@@ -84,10 +86,13 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 		log.Warn("WARNING: No topic specified for NewEvents2Pub - this is only valid for certain test scenarios")
 	}
 
+	publishEnableEnv := os.Getenv(PublishEnabled)
+
 	return &EventStorePublisher{
-		db:       db,
-		topicARN: topicARN,
-		svc:      svc,
+		db:                db,
+		topicARN:          topicARN,
+		svc:               svc,
+		publishingEnabled: publishEnableEnv == "1",
 	}, nil
 }
 
@@ -309,6 +314,12 @@ func unlockDelay() {
 }
 
 func PublishEvents(publisher *EventStorePublisher) {
+	if publisher.publishingEnabled == false {
+		log.Info("Publishing disabled - set PG_PUBLISH_ENABLED to 1 to enable publishing.")
+		delay()
+		return
+	}
+
 	log.Debug("lock table")
 	gotLock, err := publisher.GetTableLock()
 	if err != nil {
