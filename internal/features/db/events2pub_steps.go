@@ -3,12 +3,12 @@ package db
 import (
 	. "github.com/gucumber/gucumber"
 	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/envinject"
 	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/xtracdev/pgconn"
 	"github.com/xtracdev/pgeventstore"
 	"github.com/xtracdev/pgpublish"
 	"log"
-	"github.com/xtracdev/envinject"
 )
 
 func init() {
@@ -43,12 +43,14 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB, true)
+		var publishEvents = true
+
+		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB, publishEvents)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
-		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, "")
+		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, "", publishEvents)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
