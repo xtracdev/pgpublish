@@ -3,27 +3,25 @@ package main
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/xtracdev/envinject"
 	"github.com/xtracdev/goes"
 	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/xtracdev/pgconn"
 	"github.com/xtracdev/pgeventstore"
-	"os"
 )
 
 func main() {
-	eventConfig, err := pgconn.NewEnvConfig()
+	env, err := envinject.NewInjectedEnv()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	pgdb, err := pgconn.OpenAndConnect(eventConfig.ConnectString(), 3)
+	pgdb, err := pgconn.OpenAndConnect(env, 3)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	os.Setenv("ES_PUBLISH_EVENTS", "1")
-
-	eventStore, err := pgeventstore.NewPGEventStore(pgdb.DB)
+	eventStore, err := pgeventstore.NewPGEventStore(pgdb.DB, true)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -3,12 +3,12 @@ package db
 import (
 	. "github.com/gucumber/gucumber"
 	"github.com/stretchr/testify/assert"
+	"github.com/xtracdev/envinject"
 	"github.com/xtracdev/goes/sample/testagg"
 	"github.com/xtracdev/pgconn"
 	"github.com/xtracdev/pgeventstore"
 	"github.com/xtracdev/pgpublish"
 	"log"
-	"os"
 )
 
 func init() {
@@ -21,12 +21,13 @@ func init() {
 
 	Before("@events2pub", func() {
 		var err error
-		eventConfig, err := pgconn.NewEnvConfig()
+
+		env, err := envinject.NewInjectedEnv()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
-		pgdb, err = pgconn.OpenAndConnect(eventConfig.ConnectString(), 3)
+		pgdb, err = pgconn.OpenAndConnect(env, 3)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -42,14 +43,14 @@ func init() {
 			log.Fatal(err.Error())
 		}
 
-		os.Setenv("ES_PUBLISH_EVENTS", "1")
+		var publishEvents = true
 
-		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB)
+		eventStore, err = pgeventstore.NewPGEventStore(pgdb.DB, publishEvents)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
-		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, "")
+		publisher, err = pgpublish.NewEvents2Pub(pgdb.DB, "", publishEvents)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

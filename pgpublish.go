@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
-	"os"
+	"github.com/xtracdev/envinject"
 	"strconv"
 	"strings"
 	"syscall"
@@ -67,7 +67,7 @@ func warnErrorf(format string, args ...interface{}) {
 	log.Warnf(format, args)
 }
 
-func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
+func NewEvents2Pub(db *sql.DB, topicARN string, publishEnabled bool) (*EventStorePublisher, error) {
 	var svc *sns.SNS
 
 	if topicARN != "" {
@@ -86,13 +86,11 @@ func NewEvents2Pub(db *sql.DB, topicARN string) (*EventStorePublisher, error) {
 		log.Warn("WARNING: No topic specified for NewEvents2Pub - this is only valid for certain test scenarios")
 	}
 
-	publishEnableEnv := os.Getenv(PublishEnabled)
-
 	return &EventStorePublisher{
 		db:                db,
 		topicARN:          topicARN,
 		svc:               svc,
-		publishingEnabled: publishEnableEnv == "1",
+		publishingEnabled: publishEnabled,
 	}, nil
 }
 
@@ -280,8 +278,8 @@ func (e2p *EventStorePublisher) PublishEvent(e2pub *Event2Publish) error {
 
 //SetLogLevel sets the log level reading the level to use from the envrionment using
 //the given environment variable name
-func SetLogLevel(logLevelEnvVarName string) error {
-	origLogLevel := os.Getenv(logLevelEnvVarName)
+func SetLogLevel(logLevelEnvVarName string, env *envinject.InjectedEnv) error {
+	origLogLevel := env.Getenv(logLevelEnvVarName)
 	if origLogLevel != "" {
 		ll := strings.ToLower(origLogLevel)
 		switch ll {
